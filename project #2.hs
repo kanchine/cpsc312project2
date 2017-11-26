@@ -1,3 +1,4 @@
+import System.Random
 -- Define Pixel Data Type
 -- Defines a data type Color for the RGB value of a pixel
 -- Color can be either RGB or NoColor
@@ -27,7 +28,7 @@ color (Pixel c _) = c
 pos :: Pixel -> Pos
 pos (Pixel _ p) = p
 
--- Generates a list with k Pixels by randomly selecting pixels from x
+-- Generates a list of k Pixels by randomly selecting pixels from list of pixels x
 initialize_k_means k x = [Pixel (RGB 0 0 0) (Pos 0 0)]
 
 -- Computes the euclidean distance between two pixels
