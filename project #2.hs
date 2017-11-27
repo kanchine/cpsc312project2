@@ -1,4 +1,4 @@
-import System.Random
+import System.Random (randomRIO) 
 -- Define Pixel Data Type
 -- Defines a data type Color for the RGB value of a pixel
 -- Color can be either RGB or NoColor
@@ -29,7 +29,26 @@ pos :: Pixel -> Pos
 pos (Pixel _ p) = p
 
 -- Generates a list of k Pixels by randomly selecting pixels from list of pixels x
-initialize_k_means k x = [Pixel (RGB 0 0 0) (Pos 0 0)]
+initialize_k_means k [] = return [] 
+initialize_k_means 0 x = return [] 
+initialize_k_means k x = 
+	do 
+		index <- randomRIO (0, (length x) - 1)
+		rest <- initialize_k_means (k-1) x 
+		return ((x !! index) : rest) 
+
+-- Test:
+-- let a = Pixel (RGB 0 0 0) (Pos 0 0)
+-- let b = Pixel (RGB 95 37 122) (Pos 12 4)
+-- let c = Pixel (RGB 91 165 158) (Pos 3 2)
+-- let d = Pixel (RGB 152 221 39) (Pos 14 10)
+-- let e = Pixel (RGB 221 39 85) (Pos 1 2)
+-- let f = Pixel (RGB 14 14 56) (Pos 4 6)
+-- let x = [a, b, c, d, e, f]
+-- initialize_k_means 0 x
+-- Try the following multiple times and see that different lists are randomly generated each time:
+-- initialize_k_means 1 x
+-- initialize_k_means 6 x 
 
 -- Computes the euclidean distance between two pixels
 euclidean_distance_p2p p1 p2 = sqrt ((r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2)
