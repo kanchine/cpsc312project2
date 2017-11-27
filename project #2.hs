@@ -1,4 +1,6 @@
-import System.Random (randomRIO) 
+import System.Random (randomRIO)
+import System.IO.Unsafe (unsafePerformIO)
+
 -- Define Pixel Data Type
 -- Defines a data type Color for the RGB value of a pixel
 -- Color can be either RGB or NoColor
@@ -155,7 +157,7 @@ update_means (x:xs) = (get_mean x) : (update_means xs)
 -- 9. else terminate
 fit k x = fit_helper k x initial_means initial_y
     where
-        initial_means = initialize_k_means k x
+        initial_means = unsafePerformIO (initialize_k_means k x) 
         initial_y = replicate k 1
         fit_helper k x init_means initial_y | compare_cluster old_y cluster_old_means = (cluster_old_means, new_means)
                                             | otherwise = fit_helper k x new_means new_y
