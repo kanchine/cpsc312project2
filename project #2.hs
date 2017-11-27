@@ -54,9 +54,9 @@ euclidean_distance_min_index p l = minIndex (euclidean_distance_p2l p l)
 
 -- Append p to the ith element in l
 insert_lol p i l = insert p i l 0
-	where 
-		insert p i (x:xs) n | i == n = (p:x):xs
-		                    | otherwise = x:(insert p i xs (n+1))
+    where 
+        insert p i (x:xs) n | i == n = (p:x):xs
+                            | otherwise = x:(insert p i xs (n+1))
 -- Test: insert_lol 1 1 [[1,2],[3,4]]
 
 -- Creates a list of list of clusters such that each element the list has the shortest distance to the mean
@@ -74,6 +74,15 @@ cluster k_means (x:xs) res = cluster k_means xs new_res
 -- let k_means = [a,b]
 -- let res = [[],[]]
 -- cluster k_means [a,b,c,d] res
+
+-- check if the number of elements in each cluster changes
+compare_cluster [] [] = True
+compare_cluster (x1:xs1) (x2:xs2) | x1 == length x2 = compare_cluster xs1 xs2
+                                  | otherwise = False
+
+-- Computes the number of elements in each cluster
+cluster_size [] = []
+cluster_size (x:xs) = (length x):(cluster_size xs)
 
 -- Returns a pixel that represent the sum of color values of two pixels
 sum_pixel p1 p2 = Pixel (RGB ((red (color p1)) + (red (color p2))) ((green (color p1)) + (green (color p2))) ((blue (color p1)) + (blue (color p2)))) NoPos
@@ -114,14 +123,38 @@ update_means (x:xs) = (get_mean x) : (update_means xs)
 -- let d = Pixel (RGB 4 4 4) (Pos 0 0) 
 -- update_means [[a,b],[c,d]]
 
--- Initil
--- Takes a list of pixels and the initial k means and assign each pixel to the cluster with the shortest euclidean distance
--- if the number of elements in each cluster changed, compute the mean and recursively call the fit function on the new k means
--- and the x until termination condiction is met.
--- fit k_means x cond | cond return
+
+-- Returns a tuple of the cluster and the means
+-- 1. take k (number of clusters) as input
+-- 2. take a list of pixels as input
+-- 3. initialize a list 1s of size k 
+-- 4. initialize a list of starting means randomly using initialize_k_means k x
+-- 5. cluster the list of pixels with the initial means (or newly computed mean from the clustered list)
+-- 6. compute the means of the clustered list
+-- 7. cluster with the new mean
+-- 8. if the new cluster changed repeat 5
+-- 9. else terminate
+fit k x = fit_helper k x initial_means initial_y
+    where
+        initial_means = initialize_k_means k x
+        initial_y = replicate k 1
+        fit_helper k x init_means initial_y | compare_cluster old_y cluster_old_means = (cluster_old_means, new_means)
+                                            | otherwise = fit_helper k x new_means new_y
+            where
+                old_means = init_means
+                old_y = initial_y
+                res = replicate k []
+                cluster_old_means = cluster old_means x res
+                new_means = update_means cluster_old_means
+                new_y = cluster_size cluster_old_means
+
+-- given one cluster and the mean of that cluster, recreate the cluster with a list of pixels that starts with the mean and the remaining being pixels without the color, only the position
+quantize_single [] _ = []
+quantize_single (c:xc) m = (Pixel NoColor (Pos (x (pos c)) (y (pos c)))):(quantize_single xc m)
 
 
 -- quantize list of clustered pixels
-quantize = 0
+quantize [] [] = [] 
+quantize (c:xc) (m:xm) = (m:(quantize_single c m)):(quantize xc xm)
 
 
