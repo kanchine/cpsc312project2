@@ -2,6 +2,8 @@ import System.Random (randomRIO)
 import System.IO.Unsafe (unsafePerformIO)
 import Codec.Picture
 
+import Debug.Trace as DT
+
 -- Define Pixel2 Data Type
 -- Defines a data type Color for the RGB value of a Pixel2
 -- Color can be either RGB or NoColor
@@ -31,29 +33,44 @@ color (Pixel2 c _) = c
 pos :: Pixel2 -> Pos
 pos (Pixel2 _ p) = p
 
--- Read Image, work in progress
-main = do
-  img <- readImage "cat.jpg"
-  case img of
-    Left err -> return Nothing
-    Right i -> return (Just (convertImage2Pixels (convertRGB8 i)))  -- TODO
+-- Main function, produce compressed image
+-- Input: filepath of image and value of k
+-- Output compressed image
+imageQuantization :: FilePath -> Int -> IO ([[Pixel2]], [Pixel2])
+imageQuantization filePath k = do
+    pixelList <- imageVectorization filePath
+    let d@(w, g) = fit k pixelList
+    DT.trace (show w) (pure ()) --for debugging purpose
+    return d
 
+
+-- Read Image, convert image to list of Pixel2
+imageVectorization :: FilePath -> IO [Pixel2]
+imageVectorization filePath = do
+  img <- readImage filePath
+  case img of
+    Left err -> return []
+    Right i -> return (convertImage2Pixels (convertRGB8 i))
+
+-- Helper function to create pixels, extracting the RGB value and position from each pixel
 convertImage2Pixels :: Image PixelRGB8 -> [Pixel2]
 convertImage2Pixels image@(Image w h _) = 
     [Pixel2 (getColorFromPosition image (x, y)) (Pos x y) | (x,y) <- (generatePixelPos w h)]
 
+-- Helper funciton to obtain RGB value from each pixel
 getColorFromPosition ::Image PixelRGB8 -> (Int, Int) -> Color
 getColorFromPosition img (x, y) = getColor (pixelAt img x y)
     where 
         getColor:: PixelRGB8 -> Color
         getColor (PixelRGB8 r g b) = (RGB (fromIntegral r) (fromIntegral g) (fromIntegral b))
 
--- Generate all the pixel x y values
+-- Generate all x, y position pairs of an image based on its width and height
 generatePixelPos :: Int -> Int -> [(Int,Int)]
 generatePixelPos width height = [(b,a) | a <- [0..width-1], b <- [0..height-1]]
 
 
 -- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
+initialize_k_means :: Int -> [Pixel2] -> IO [Pixel2]
 initialize_k_means k [] = return [] 
 initialize_k_means 0 x = return [] 
 initialize_k_means k x = 
@@ -178,6 +195,7 @@ update_means (x:xs) = (get_mean x) : (update_means xs)
 -- 7. cluster with the new mean
 -- 8. if the new cluster changed repeat 5
 -- 9. else terminate
+fit :: Int -> [Pixel2] -> ([[Pixel2]], [Pixel2])
 fit k x = fit_helper k x initial_means initial_y
     where
         initial_means = unsafePerformIO (initialize_k_means k x) 
