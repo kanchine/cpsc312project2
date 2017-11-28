@@ -32,25 +32,25 @@ pos :: Pixel2 -> Pos
 pos (Pixel2 _ p) = p
 
 -- Read Image, work in progress
---main = do
---  img <- readImage "cat.jpg"
---  case img of
---    Left err -> return Nothing
---    Right i -> return (Just (convertImage2Pixels (convertRGB8 i)))  -- TODO
+main = do
+  img <- readImage "cat.jpg"
+  case img of
+    Left err -> return Nothing
+    Right i -> return (Just (convertImage2Pixels (convertRGB8 i)))  -- TODO
 
---convertImage2Pixels :: DynamicImage -> [Pixel2]
---convertImage2Pixels (ImageRGB8 image@(Image w h _)) = 
---    [Pixel2 (getColorFromPosition image (x, y)) (Pos x y) | (x,y) <- (generatePixelPos w h)]
+convertImage2Pixels :: Image PixelRGB8 -> [Pixel2]
+convertImage2Pixels image@(Image w h _) = 
+    [Pixel2 (getColorFromPosition image (x, y)) (Pos x y) | (x,y) <- (generatePixelPos w h)]
 
---getColorFromPosition ::DynamicImage -> (Int, Int) -> Color
---getColorFromPosition img (x, y) = getColor (pixelAt img x y)
---    where 
---        getColor:: PixelRGB8 -> Color
---        getColor (PixelRGB8 r g b) = (RGB (fromIntegral r) (fromIntegral g) (fromIntegral b))
+getColorFromPosition ::Image PixelRGB8 -> (Int, Int) -> Color
+getColorFromPosition img (x, y) = getColor (pixelAt img x y)
+    where 
+        getColor:: PixelRGB8 -> Color
+        getColor (PixelRGB8 r g b) = (RGB (fromIntegral r) (fromIntegral g) (fromIntegral b))
 
 -- Generate all the pixel x y values
 generatePixelPos :: Int -> Int -> [(Int,Int)]
-generatePixelPos width height = [(a,b) | a <- [1..width], b <- [1..height]]
+generatePixelPos width height = [(b,a) | a <- [0..width-1], b <- [0..height-1]]
 
 
 -- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
