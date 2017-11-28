@@ -1,8 +1,9 @@
 import System.Random (randomRIO)
 import System.IO.Unsafe (unsafePerformIO)
+import Codec.Picture
 
--- Define Pixel Data Type
--- Defines a data type Color for the RGB value of a pixel
+-- Define Pixel2 Data Type
+-- Defines a data type Color for the RGB value of a Pixel2
 -- Color can be either RGB or NoColor
 data Color = RGB Double Double Double | NoColor deriving Show
 
@@ -15,44 +16,66 @@ green (RGB _ g _) = g
 blue :: Color -> Double
 blue (RGB _ _ b) = b
 
--- Defines a data type of position of a pixel with the first value being the x coordinate an second value being the y coordinate in the picture
+-- Defines a data type of position of a Pixel2 with the first value being the x coordinate an second value being the y coordinate in the picture
 data Pos = Pos Int Int | NoPos deriving Show
 
 x :: Pos -> Int
 x (Pos x _) = x
 y (Pos _ y) = y
 
--- Defines a pixel data type which contains color and position
-data Pixel = Pixel Color Pos deriving Show
+-- Defines a Pixel2 data type which contains color and position
+data Pixel2 = Pixel2 Color Pos deriving Show
 
-color :: Pixel -> Color
-color (Pixel c _) = c
-pos :: Pixel -> Pos
-pos (Pixel _ p) = p
+color :: Pixel2 -> Color
+color (Pixel2 c _) = c
+pos :: Pixel2 -> Pos
+pos (Pixel2 _ p) = p
 
--- Generates a list of k Pixels by randomly selecting pixels from list of pixels x
+-- Read Image, work in progress
+--main = do
+--  img <- readImage "cat.jpg"
+--  case img of
+--    Left err -> return Nothing
+--    Right i -> return (Just (convertImage2Pixels (convertRGB8 i)))  -- TODO
+
+--convertImage2Pixels :: DynamicImage -> [Pixel2]
+--convertImage2Pixels (ImageRGB8 image@(Image w h _)) = 
+--    [Pixel2 (getColorFromPosition image (x, y)) (Pos x y) | (x,y) <- (generatePixelPos w h)]
+
+--getColorFromPosition ::DynamicImage -> (Int, Int) -> Color
+--getColorFromPosition img (x, y) = getColor (pixelAt img x y)
+--    where 
+--        getColor:: PixelRGB8 -> Color
+--        getColor (PixelRGB8 r g b) = (RGB (fromIntegral r) (fromIntegral g) (fromIntegral b))
+
+-- Generate all the pixel x y values
+generatePixelPos :: Int -> Int -> [(Int,Int)]
+generatePixelPos width height = [(a,b) | a <- [1..width], b <- [1..height]]
+
+
+-- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
 initialize_k_means k [] = return [] 
 initialize_k_means 0 x = return [] 
 initialize_k_means k x = 
-	do 
-		index <- randomRIO (0, (length x) - 1)
-		rest <- initialize_k_means (k-1) x 
-		return ((x !! index) : rest) 
+    do 
+        index <- randomRIO (0, (length x) - 1)
+        rest <- initialize_k_means (k-1) x 
+        return ((x !! index) : rest) 
 
 -- Test:
--- let a = Pixel (RGB 0 0 0) (Pos 0 0)
--- let b = Pixel (RGB 95 37 122) (Pos 12 4)
--- let c = Pixel (RGB 91 165 158) (Pos 3 2)
--- let d = Pixel (RGB 152 221 39) (Pos 14 10)
--- let e = Pixel (RGB 221 39 85) (Pos 1 2)
--- let f = Pixel (RGB 14 14 56) (Pos 4 6)
+-- let a = Pixel2 (RGB 0 0 0) (Pos 0 0)
+-- let b = Pixel2 (RGB 95 37 122) (Pos 12 4)
+-- let c = Pixel2 (RGB 91 165 158) (Pos 3 2)
+-- let d = Pixel2 (RGB 152 221 39) (Pos 14 10)
+-- let e = Pixel2 (RGB 221 39 85) (Pos 1 2)
+-- let f = Pixel2 (RGB 14 14 56) (Pos 4 6)
 -- let x = [a, b, c, d, e, f]
 -- initialize_k_means 0 x
 -- Try the following multiple times and see that different lists are randomly generated each time:
 -- initialize_k_means 1 x
 -- initialize_k_means 6 x 
 
--- Computes the euclidean distance between two pixels
+-- Computes the euclidean distance between two Pixel2s
 euclidean_distance_p2p p1 p2 = sqrt ((r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2)
     where
         r1 = red (color p1)
@@ -88,10 +111,10 @@ cluster k_means (x:xs) res = cluster k_means xs new_res
         i = euclidean_distance_min_index x k_means
         new_res = insert_lol x i res
 -- Test:    	
--- let a = Pixel (RGB 1 1 1) (Pos 0 0)
--- let b = Pixel (RGB 2 2 2) (Pos 0 0)
--- let c = Pixel (RGB 1 1 1) (Pos 0 0)
--- let d = Pixel (RGB 2 2 2) (Pos 0 0)
+-- let a = Pixel2 (RGB 1 1 1) (Pos 0 0)
+-- let b = Pixel2 (RGB 2 2 2) (Pos 0 0)
+-- let c = Pixel2 (RGB 1 1 1) (Pos 0 0)
+-- let d = Pixel2 (RGB 2 2 2) (Pos 0 0)
 -- let k_means = [a,b]
 -- let res = [[],[]]
 -- cluster k_means [a,b,c,d] res
@@ -105,23 +128,23 @@ compare_cluster (x1:xs1) (x2:xs2) | x1 == length x2 = compare_cluster xs1 xs2
 cluster_size [] = []
 cluster_size (x:xs) = (length x):(cluster_size xs)
 
--- Returns a pixel that represent the sum of color values of two pixels
-sum_pixel p1 p2 = Pixel (RGB ((red (color p1)) + (red (color p2))) ((green (color p1)) + (green (color p2))) ((blue (color p1)) + (blue (color p2)))) NoPos
+-- Returns a Pixel2 that represent the sum of color values of two Pixel2s
+sum_Pixel2 p1 p2 = Pixel2 (RGB ((red (color p1)) + (red (color p2))) ((green (color p1)) + (green (color p2))) ((blue (color p1)) + (blue (color p2)))) NoPos
 -- Test
--- let a = Pixel (RGB 1 1 1) (Pos 0 0)
--- let b = Pixel (RGB 2 2 2) (Pos 0 0)
--- sum_pixel a b
+-- let a = Pixel2 (RGB 1 1 1) (Pos 0 0)
+-- let b = Pixel2 (RGB 2 2 2) (Pos 0 0)
+-- sum_Pixel2 a b
 
--- Returns a pixel that represent the sum of color value in the list of pixels
-get_sum l = foldl sum_pixel (Pixel (RGB 0 0 0) NoPos) l
+-- Returns a Pixel2 that represent the sum of color value in the list of Pixel2s
+get_sum l = foldl sum_Pixel2 (Pixel2 (RGB 0 0 0) NoPos) l
 -- Test:
--- let a = Pixel (RGB 1 1 1) (Pos 0 0)
--- let b = Pixel (RGB 2 2 2) (Pos 0 0)
--- let c = Pixel (RGB 3 3 3) (Pos 0 0) 
+-- let a = Pixel2 (RGB 1 1 1) (Pos 0 0)
+-- let b = Pixel2 (RGB 2 2 2) (Pos 0 0)
+-- let c = Pixel2 (RGB 3 3 3) (Pos 0 0) 
 -- get_sum [a,b,c]
 
--- Returns a pixel that represent the average color value in the list of pixels
-get_mean l = Pixel (RGB (r / n) (g / n) (b / n)) NoPos
+-- Returns a Pixel2 that represent the average color value in the list of Pixel2s
+get_mean l = Pixel2 (RGB (r / n) (g / n) (b / n)) NoPos
     where
         p = get_sum l
         n = fromIntegral (length l)
@@ -129,28 +152,28 @@ get_mean l = Pixel (RGB (r / n) (g / n) (b / n)) NoPos
         g = green (color p)
         b = blue (color p)
 -- Test:
--- let a = Pixel (RGB 1 1 1) (Pos 0 0)
--- let b = Pixel (RGB 2 2 2) (Pos 0 0)
--- let c = Pixel (RGB 3 3 3) (Pos 0 0) 
+-- let a = Pixel2 (RGB 1 1 1) (Pos 0 0)
+-- let b = Pixel2 (RGB 2 2 2) (Pos 0 0)
+-- let c = Pixel2 (RGB 3 3 3) (Pos 0 0) 
 -- get_mean [a,b,c]
 
 -- computes the mean of each cluster in a list of clusters
 update_means [] = []
 update_means (x:xs) = (get_mean x) : (update_means xs) 
 
--- let a = Pixel (RGB 1 1 1) (Pos 0 0)
--- let b = Pixel (RGB 2 2 2) (Pos 0 0)
--- let c = Pixel (RGB 3 3 3) (Pos 0 0) 
--- let d = Pixel (RGB 4 4 4) (Pos 0 0) 
+-- let a = Pixel2 (RGB 1 1 1) (Pos 0 0)
+-- let b = Pixel2 (RGB 2 2 2) (Pos 0 0)
+-- let c = Pixel2 (RGB 3 3 3) (Pos 0 0) 
+-- let d = Pixel2 (RGB 4 4 4) (Pos 0 0) 
 -- update_means [[a,b],[c,d]]
 
 
 -- Returns a tuple of the cluster and the means
 -- 1. take k (number of clusters) as input
--- 2. take a list of pixels as input
+-- 2. take a list of Pixel2s as input
 -- 3. initialize a list 1s of size k 
 -- 4. initialize a list of starting means randomly using initialize_k_means k x
--- 5. cluster the list of pixels with the initial means (or newly computed mean from the clustered list)
+-- 5. cluster the list of Pixel2s with the initial means (or newly computed mean from the clustered list)
 -- 6. compute the means of the clustered list
 -- 7. cluster with the new mean
 -- 8. if the new cluster changed repeat 5
@@ -169,12 +192,12 @@ fit k x = fit_helper k x initial_means initial_y
                 new_means = update_means cluster_old_means
                 new_y = cluster_size cluster_old_means
 
--- given one cluster and the mean of that cluster, recreate the cluster with a list of pixels that starts with the mean and the remaining being pixels without the color, only the position
+-- given one cluster and the mean of that cluster, recreate the cluster with a list of Pixel2s that starts with the mean and the remaining being Pixel2s without the color, only the position
 quantize_single [] _ = []
-quantize_single (c:xc) m = (Pixel NoColor (Pos (x (pos c)) (y (pos c)))):(quantize_single xc m)
+quantize_single (c:xc) m = (Pixel2 NoColor (Pos (x (pos c)) (y (pos c)))):(quantize_single xc m)
 
 
--- quantize list of clustered pixels
+-- quantize list of clustered Pixel2s
 quantize [] [] = [] 
 quantize (c:xc) (m:xm) = (m:(quantize_single c m)):(quantize xc xm)
 
