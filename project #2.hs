@@ -36,12 +36,12 @@ pos (Pixel2 _ p) = p
 -- Main function, produce compressed image
 -- Input: filepath of image and value of k
 -- Output compressed image
-imageQuantization :: FilePath -> Int -> IO ([[Pixel2]], [Pixel2])
+imageQuantization :: FilePath -> Int -> IO ([[Pixel2]])
 imageQuantization filePath k = do
     pixelList <- imageVectorization filePath
     let d@(w, g) = fit k pixelList
-    DT.trace (show w) (pure ()) --for debugging purpose
-    return d
+    --DT.trace (show w) (pure ()) --for debugging purpose
+    return w
 
 
 -- Read Image, convert image to list of Pixel2
