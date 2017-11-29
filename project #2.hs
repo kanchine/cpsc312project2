@@ -215,9 +215,20 @@ fit k x = fit_helper k x initial_means initial_y
 quantize_single [] _ = []
 quantize_single (c:xc) m = (Pixel2 NoColor (Pos (x (pos c)) (y (pos c)))):(quantize_single xc m)
 
+-- convert from Double to Int
+toInt :: Double -> Int
+toInt = truncate
 
 -- quantize list of clustered Pixel2s
 quantize [] [] = [] 
-quantize (c:xc) (m:xm) = (m:(quantize_single c m)):(quantize xc xm)
+quantize (c:xc) (m:xm) = (m_mod:(quantize_single c m)):(quantize xc xm)
+    where
+        rgb = Color m
+        r = toInt red rgb
+        g = toInt green rgb
+        b = toInt blue rgb
+        m_mod = Pixel2 (Color r g b) NoPos
+
+
 
 
