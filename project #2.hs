@@ -223,10 +223,10 @@ toInt = truncate
 quantize [] [] = [] 
 quantize (c:xc) (m:xm) = (m_mod:(quantize_single c m)):(quantize xc xm)
     where
-        rgb = Color m
-        r = toInt red rgb
-        g = toInt green rgb
-        b = toInt blue rgb
+        rgb = color m
+        r = toInt (red rgb)
+        g = toInt (green rgb)
+        b = toInt (blue rgb)
         m_mod = Pixel2 (Color r g b) NoPos
 
 
