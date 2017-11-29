@@ -77,7 +77,7 @@ initialize_k_means 0 x = return []
 initialize_k_means k x = 
     do 
         index <- randomRIO (0, (length x) - 1)
-        rest <- initialize_k_means (k-1) x 
+        rest <- initialize_k_means (k-1) (removeNth index x)  
         return ((x !! index) : rest) 
 
 -- Test:
@@ -92,6 +92,17 @@ initialize_k_means k x =
 -- Try the following multiple times and see that different lists are randomly generated each time:
 -- initialize_k_means 1 x
 -- initialize_k_means 6 x 
+
+
+-- Helper to remove the nth element from a list
+removeNth :: Int -> [a] -> [a]
+removeNth n [] = []
+removeNth n (x:xs) | n == 0 = xs | otherwise = x : removeNth (n-1) xs 
+
+-- Test:
+-- removeNth 1 "abc"
+-- removeNth 2 [1,2,3]
+
 
 -- Computes the euclidean distance between two Pixel2s
 euclidean_distance_p2p p1 p2 = sqrt ((r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2)
