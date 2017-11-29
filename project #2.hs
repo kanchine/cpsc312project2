@@ -39,9 +39,10 @@ pos (Pixel2 _ p) = p
 imageQuantization :: FilePath -> Int -> IO ([[Pixel2]])
 imageQuantization filePath k = do
     pixelList <- imageVectorization filePath
-    let d@(w, g) = fit k pixelList
+    let (w, g) = fit k pixelList
+    let res = quantize w g
     --DT.trace (show w) (pure ()) --for debugging purpose
-    return w
+    return res
 
 
 -- Read Image, convert image to list of Pixel2
