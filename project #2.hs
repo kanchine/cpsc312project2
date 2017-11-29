@@ -3,6 +3,9 @@ import System.IO.Unsafe (unsafePerformIO)
 import Codec.Picture
 
 import Debug.Trace as DT
+import Control.Monad
+import Control.Monad.ST
+import qualified Codec.Picture.Types as M
 
 -- Define Pixel2 Data Type
 -- Defines a data type Color for the RGB value of a Pixel2
@@ -70,6 +73,11 @@ generatePixelPos :: Int -> Int -> [(Int,Int)]
 generatePixelPos width height = [(a,b) | a <- [0..width-1], b <- [0..height-1]]
 
 
+-- writeImage :: Int -> Int -> -> Image PixelRGB8
+--writeImage imageWidth imageHeight = do
+--  mimg <- M.newMutableImage imageWidth imageHeight
+--  writePixel mimg posx posy RGBValute
+
 -- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
 initialize_k_means :: Int -> [Pixel2] -> IO [Pixel2]
 initialize_k_means k [] = return [] 
@@ -106,7 +114,7 @@ removeNth n (x:xs) | n == 0 = xs | otherwise = x : removeNth (n-1) xs
 
 -- Computes the euclidean distance between two Pixel2s
 euclidean_distance_p2p :: Pixel2 -> Pixel2 -> Int
-euclidean_distance_p2p p1 p2 = sqrt ((r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2)
+euclidean_distance_p2p p1 p2 = (r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2
     where
         r1 = red (color p1)
         r2 = red (color p2)
@@ -176,7 +184,7 @@ get_sum l = foldl sum_Pixel2 (Pixel2 (RGB 0 0 0) NoPos) l
 
 -- Returns a Pixel2 that represent the average color value in the list of Pixel2s
 get_mean :: [Pixel2] -> Pixel2
-get_mean l = Pixel2 (RGB (r / n) (g / n) (b / n)) NoPos
+get_mean l = Pixel2 (RGB (r `div` n) (g `div` n) (b `div` n)) NoPos
     where
         p = get_sum l
         n = length l
