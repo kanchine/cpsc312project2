@@ -7,15 +7,15 @@ import Debug.Trace as DT
 -- Define Pixel2 Data Type
 -- Defines a data type Color for the RGB value of a Pixel2
 -- Color can be either RGB or NoColor
-data Color = RGB Double Double Double | NoColor deriving Show
+data Color = RGB Int Int Int | NoColor deriving Show
 
-red :: Color -> Double
+red :: Color -> Int
 red (RGB r _ _) = r
 
-green :: Color -> Double
+green :: Color -> Int
 green (RGB _ g _) = g
 
-blue :: Color -> Double
+blue :: Color -> Int
 blue (RGB _ _ b) = b
 
 -- Defines a data type of position of a Pixel2 with the first value being the x coordinate an second value being the y coordinate in the picture
@@ -94,6 +94,7 @@ initialize_k_means k x =
 -- initialize_k_means 6 x 
 
 -- Computes the euclidean distance between two Pixel2s
+euclidean_distance_p2p :: Pixel2 -> Pixel2 -> Int
 euclidean_distance_p2p p1 p2 = sqrt ((r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2)
     where
         r1 = red (color p1)
@@ -104,6 +105,7 @@ euclidean_distance_p2p p1 p2 = sqrt ((r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2)
         b2 = blue (color p2)
 
 -- Computes the euclidean distance of a poin to a list of points and returns a list of euclidean distance
+euclidean_distance_p2l :: Pixel2 -> [Pixel2] -> [Int]
 euclidean_distance_p2l p [] = []
 euclidean_distance_p2l p (x:xs) = (euclidean_distance_p2p p x) : euclidean_distance_p2l p xs
 
@@ -162,10 +164,11 @@ get_sum l = foldl sum_Pixel2 (Pixel2 (RGB 0 0 0) NoPos) l
 -- get_sum [a,b,c]
 
 -- Returns a Pixel2 that represent the average color value in the list of Pixel2s
+get_mean :: [Pixel2] -> Pixel2
 get_mean l = Pixel2 (RGB (r / n) (g / n) (b / n)) NoPos
     where
         p = get_sum l
-        n = fromIntegral (length l)
+        n = length l
         r = red (color p)
         g = green (color p)
         b = blue (color p)
@@ -215,20 +218,7 @@ fit k x = fit_helper k x initial_means initial_y
 quantize_single [] _ = []
 quantize_single (c:xc) m = (Pixel2 NoColor (Pos (x (pos c)) (y (pos c)))):(quantize_single xc m)
 
--- convert from Double to Int
-toInt :: Double -> Int
-toInt = truncate
 
 -- quantize list of clustered Pixel2s
 quantize [] [] = [] 
-quantize (c:xc) (m:xm) = (m_mod:(quantize_single c m)):(quantize xc xm)
-    where
-        rgb = color m
-        r = toInt (red rgb)
-        g = toInt (green rgb)
-        b = toInt (blue rgb)
-        m_mod = Pixel2 (Color r g b) NoPos
-
-
-
-
+quantize (c:xc) (m:xm) = (m:(quantize_single c m)):(quantize xc xm)
