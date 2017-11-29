@@ -36,7 +36,7 @@ pos (Pixel2 _ p) = p
 -- Main function, produce compressed image
 -- Input: filepath of image and value of k
 -- Output compressed image
-imageQuantization :: FilePath -> Int -> IO ([[Pixel2]])
+--imageQuantization :: FilePath -> Int -> IO ([[Pixel2]])
 imageQuantization filePath k = do
     pixelList <- imageVectorization filePath
     let (w, g) = fit k pixelList
@@ -67,7 +67,7 @@ getColorFromPosition img (x, y) = getColor (pixelAt img x y)
 
 -- Generate all x, y position pairs of an image based on its width and height
 generatePixelPos :: Int -> Int -> [(Int,Int)]
-generatePixelPos width height = [(b,a) | a <- [0..width-1], b <- [0..height-1]]
+generatePixelPos width height = [(a,b) | a <- [0..width-1], b <- [0..height-1]]
 
 
 -- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
