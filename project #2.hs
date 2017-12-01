@@ -1,3 +1,7 @@
+-- Authors:
+-- Name: Yu Ju Liang    -- Student Number: 32567133
+-- Name: Wei Edwin Chen -- Student Number: 74545047
+
 import System.Random (randomRIO)
 import System.IO.Unsafe (unsafePerformIO)
 import System.FilePath.Windows
@@ -94,7 +98,7 @@ writeImage imageWidth imageHeight pixelList = runST $ do
 --pixelPos :: [[Pixel2]] -> [Pixel2]
 pixelPos pixelList = [ k | mean:positions <- pixelList, k <- [(Pixel2 (color mean) (pos p)) | p <- positions]]
 
-
+-- Convert from Color to PixelRGB8 format
 rGBToPixelRGB8 :: Color -> PixelRGB8
 rGBToPixelRGB8 c = (PixelRGB8 r g b)
     where
@@ -264,4 +268,4 @@ quantize_single (c:xc) m = (Pixel2 NoColor (Pos (x (pos c)) (y (pos c)))):(quant
 
 -- quantize list of clustered Pixel2s
 quantize [] [] = [] 
-quantize (c:xc) (m:xm) = (m:(quantize_single c m)):(quantize xc xm)
+quantize (c:xc) (m:xm) = (quantize_single c m):(quantize xc xm)
