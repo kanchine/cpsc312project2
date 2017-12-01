@@ -44,19 +44,20 @@ pos (Pixel2 _ p) = p
 
 -- Main function, produce compressed image
 -- Input: filepath of image and value of k
--- Output: nothing
+-- Output: saves image to location indicated by outputFilePath
 imageQuantization :: FilePath -> Int -> IO ()
 imageQuantization filePath k = do
     (width, height, pixelList) <- imageVectorization filePath
-    let (a, b) = fit k pixelList
-    let res = quantize a b
-    let img = writeImage width height (pixelPos res)
+    let (a, clusterMeans) = fit k pixelList
+    let clusters = quantize a clusterMeans
+    let img = writeImage width height clusters (pixels2Color clusterMeans)
     --DT.trace (show width) (pure ()) --for debugging purpose
-    --DT.trace (show height) (pure ())
     let outputFilePath = "quantized_img_k_" ++ (show k) ++"_"++ (takeBaseName filePath) ++ ".png"
     savePngImage outputFilePath (ImageRGB8 img)
     
-
+-- Helper fn, convert list of pixels to list of colors
+pixels2Color :: [Pixel2] -> [Color]
+pixels2Color pixels = [ (color p) | p <- pixels]
 
 -- Read Image, convert image to list of Pixel2, also return the dimension of image
 imageVectorization :: FilePath -> IO (Int, Int, [Pixel2])
@@ -82,22 +83,21 @@ getColorFromPosition img (x, y) = getColor (pixelAt img x y)
 generatePixelPos :: Int -> Int -> [(Int,Int)]
 generatePixelPos width height = [(a,b) | a <- [0..width-1], b <- [0..height-1]]
 
-writeImage :: Int -> Int -> [Pixel2] -> Image PixelRGB8
-writeImage imageWidth imageHeight pixelList = runST $ do
+-- Given clusters(positions without colors) and means, output image
+writeImage :: Int -> Int -> [[Pixel2]] -> [Color] -> Image PixelRGB8
+writeImage imageWidth imageHeight clusters clusterMeans = runST $ do
     mimg <- M.newMutableImage imageWidth imageHeight
-    let writeCluster pixels
-            | (length pixels) == 0 = M.unsafeFreezeImage mimg
+    let writeCluster clusters clusterMeans
+            | (length clusterMeans == 0) = M.unsafeFreezeImage mimg
+            | (length (head clusters) == 0) = writeCluster (tail clusters) (tail clusterMeans)
             | otherwise = do
-                let h = head pixels
-                let t = tail pixels
-                --DT.trace (show h) (pure ())
-                writePixel mimg (x (pos h)) (y (pos h)) (rGBToPixelRGB8 (color h))
-                writeCluster t
-    writeCluster pixelList
-
-
---pixelPos :: [[Pixel2]] -> [Pixel2]
-pixelPos pixelList = [ k | mean:positions <- pixelList, k <- [(Pixel2 (color mean) (pos p)) | p <- positions]]
+                let h = head clusters
+                let t = tail clusters
+                let meanColor = head clusterMeans
+                --DT.trace (show (head h)) (pure ())
+                writePixel mimg (x (pos (head h))) (y (pos (head h))) (rGBToPixelRGB8 meanColor)
+                writeCluster ((tail h):t) clusterMeans
+    writeCluster clusters clusterMeans
 
 -- Convert from Color to PixelRGB8 format
 rGBToPixelRGB8 :: Color -> PixelRGB8
@@ -106,6 +106,8 @@ rGBToPixelRGB8 c = (PixelRGB8 r g b)
         r = fromIntegral (red c)
         g = fromIntegral (green c)
         b = fromIntegral (blue c)
+
+
 
 -- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
 initialize_k_means :: Int -> [Pixel2] -> IO [Pixel2]
