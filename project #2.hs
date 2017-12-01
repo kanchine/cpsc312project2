@@ -1,5 +1,6 @@
 import System.Random (randomRIO)
 import System.IO.Unsafe (unsafePerformIO)
+import System.FilePath.Windows
 import Codec.Picture
 
 import Debug.Trace as DT
@@ -38,28 +39,32 @@ pos (Pixel2 _ p) = p
 
 -- Main function, produce compressed image
 -- Input: filepath of image and value of k
--- Output compressed image
---imageQuantization :: FilePath -> Int -> IO ([[Pixel2]])
+-- Output: nothing
+imageQuantization :: FilePath -> Int -> IO ()
 imageQuantization filePath k = do
-    pixelList <- imageVectorization filePath
-    let (w, g) = fit k pixelList
-    let res = quantize w g
-    --DT.trace (show w) (pure ()) --for debugging purpose
-    return res
+    (width, height, pixelList) <- imageVectorization filePath
+    let (a, b) = fit k pixelList
+    let res = quantize a b
+    let img = writeImage width height (pixelPos res)
+    --DT.trace (show width) (pure ()) --for debugging purpose
+    --DT.trace (show height) (pure ())
+    let outputFilePath = "quantized_img_k_" ++ (show k) ++"_"++ (takeBaseName filePath) ++ ".png"
+    savePngImage outputFilePath (ImageRGB8 img)
+    
 
 
--- Read Image, convert image to list of Pixel2
-imageVectorization :: FilePath -> IO [Pixel2]
+-- Read Image, convert image to list of Pixel2, also return the dimension of image
+imageVectorization :: FilePath -> IO (Int, Int, [Pixel2])
 imageVectorization filePath = do
   img <- readImage filePath
   case img of
-    Left err -> return []
+    Left err -> return (0,0,[])
     Right i -> return (convertImage2Pixels (convertRGB8 i))
 
 -- Helper function to create pixels, extracting the RGB value and position from each pixel
-convertImage2Pixels :: Image PixelRGB8 -> [Pixel2]
+convertImage2Pixels :: Image PixelRGB8 -> (Int, Int, [Pixel2])
 convertImage2Pixels image@(Image w h _) = 
-    [Pixel2 (getColorFromPosition image (x, y)) (Pos x y) | (x,y) <- (generatePixelPos w h)]
+    (w,h,[Pixel2 (getColorFromPosition image (x, y)) (Pos x y) | (x,y) <- (generatePixelPos w h)])
 
 -- Helper funciton to obtain RGB value from each pixel
 getColorFromPosition ::Image PixelRGB8 -> (Int, Int) -> Color
@@ -72,11 +77,30 @@ getColorFromPosition img (x, y) = getColor (pixelAt img x y)
 generatePixelPos :: Int -> Int -> [(Int,Int)]
 generatePixelPos width height = [(a,b) | a <- [0..width-1], b <- [0..height-1]]
 
+writeImage :: Int -> Int -> [Pixel2] -> Image PixelRGB8
+writeImage imageWidth imageHeight pixelList = runST $ do
+    mimg <- M.newMutableImage imageWidth imageHeight
+    let writeCluster pixels
+            | (length pixels) == 0 = M.unsafeFreezeImage mimg
+            | otherwise = do
+                let h = head pixels
+                let t = tail pixels
+                --DT.trace (show h) (pure ())
+                writePixel mimg (x (pos h)) (y (pos h)) (rGBToPixelRGB8 (color h))
+                writeCluster t
+    writeCluster pixelList
 
--- writeImage :: Int -> Int -> -> Image PixelRGB8
---writeImage imageWidth imageHeight = do
---  mimg <- M.newMutableImage imageWidth imageHeight
---  writePixel mimg posx posy RGBValute
+
+--pixelPos :: [[Pixel2]] -> [Pixel2]
+pixelPos pixelList = [ k | mean:positions <- pixelList, k <- [(Pixel2 (color mean) (pos p)) | p <- positions]]
+
+
+rGBToPixelRGB8 :: Color -> PixelRGB8
+rGBToPixelRGB8 c = (PixelRGB8 r g b)
+    where
+        r = fromIntegral (red c)
+        g = fromIntegral (green c)
+        b = fromIntegral (blue c)
 
 -- Generates a list of k Pixel2s by randomly selecting Pixel2s from list of Pixel2s x
 initialize_k_means :: Int -> [Pixel2] -> IO [Pixel2]
