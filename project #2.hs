@@ -1,6 +1,7 @@
 -- Authors:
 -- Name: Yu Ju Liang    -- Student Number: 32567133
 -- Name: Wei Edwin Chen -- Student Number: 74545047
+-- Name: Trisha Huang   -- Student Number: 32824138
 
 import System.Random (randomRIO)
 import System.IO.Unsafe (unsafePerformIO)
