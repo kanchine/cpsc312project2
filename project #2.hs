@@ -54,10 +54,6 @@ imageQuantization filePath k = do
     --DT.trace (show width) (pure ()) --for debugging purpose
     let outputFilePath = "quantized_img_k_" ++ (show k) ++"_"++ (takeBaseName filePath) ++ ".png"
     savePngImage outputFilePath (ImageRGB8 img)
-    
--- Helper fn, convert list of pixels to list of colors
-pixels2Color :: [Pixel2] -> [Color]
-pixels2Color pixels = [ (color p) | p <- pixels]
 
 -- Read Image, convert image to list of Pixel2, also return the dimension of image
 imageVectorization :: FilePath -> IO (Int, Int, [Pixel2])
@@ -83,7 +79,7 @@ getColorFromPosition img (x, y) = getColor (pixelAt img x y)
 generatePixelPos :: Int -> Int -> [(Int,Int)]
 generatePixelPos width height = [(a,b) | a <- [0..width-1], b <- [0..height-1]]
 
--- Given clusters(positions without colors) and means, output image
+-- Given clusters(positions without colors) and means (color), output image
 writeImage :: Int -> Int -> [[Pos]] -> [Color] -> Image PixelRGB8
 writeImage imageWidth imageHeight clusters clusterMeans = runST $ do
     mimg <- M.newMutableImage imageWidth imageHeight
