@@ -49,8 +49,8 @@ imageQuantization :: FilePath -> Int -> IO ()
 imageQuantization filePath k = do
     (width, height, pixelList) <- imageVectorization filePath
     let (a, clusterMeans) = fit k pixelList
-    let clusters = quantize a clusterMeans
-    let img = writeImage width height clusters (pixels2Color clusterMeans)
+    let clusters = quantize_cluster a
+    let img = writeImage width height clusters clusterMeans
     --DT.trace (show width) (pure ()) --for debugging purpose
     let outputFilePath = "quantized_img_k_" ++ (show k) ++"_"++ (takeBaseName filePath) ++ ".png"
     savePngImage outputFilePath (ImageRGB8 img)
@@ -84,7 +84,7 @@ generatePixelPos :: Int -> Int -> [(Int,Int)]
 generatePixelPos width height = [(a,b) | a <- [0..width-1], b <- [0..height-1]]
 
 -- Given clusters(positions without colors) and means, output image
-writeImage :: Int -> Int -> [[Pixel2]] -> [Color] -> Image PixelRGB8
+writeImage :: Int -> Int -> [[Pos]] -> [Color] -> Image PixelRGB8
 writeImage imageWidth imageHeight clusters clusterMeans = runST $ do
     mimg <- M.newMutableImage imageWidth imageHeight
     let writeCluster clusters clusterMeans
@@ -95,7 +95,7 @@ writeImage imageWidth imageHeight clusters clusterMeans = runST $ do
                 let t = tail clusters
                 let meanColor = head clusterMeans
                 --DT.trace (show (head h)) (pure ())
-                writePixel mimg (x (pos (head h))) (y (pos (head h))) (rGBToPixelRGB8 meanColor)
+                writePixel mimg (x (head h)) (y (head h)) (rGBToPixelRGB8 meanColor)
                 writeCluster ((tail h):t) clusterMeans
     writeCluster clusters clusterMeans
 
@@ -249,12 +249,12 @@ update_means (x:xs) = (get_mean x) : (update_means xs)
 -- 7. cluster with the new mean
 -- 8. if the new cluster changed repeat 5
 -- 9. else terminate
-fit :: Int -> [Pixel2] -> ([[Pixel2]], [Pixel2])
+fit :: Int -> [Pixel2] -> ([[Pixel2]], [Color])
 fit k x = fit_helper k x initial_means initial_y
     where
         initial_means = unsafePerformIO (initialize_k_means k x) 
         initial_y = replicate k 1
-        fit_helper k x init_means initial_y | compare_cluster old_y cluster_old_means = (cluster_old_means, new_means)
+        fit_helper k x init_means initial_y | compare_cluster old_y cluster_old_means = (cluster_old_means, (quantize_mean new_means))
                                             | otherwise = fit_helper k x new_means new_y
             where
                 old_means = init_means
@@ -264,11 +264,15 @@ fit k x = fit_helper k x initial_means initial_y
                 new_means = update_means cluster_old_means
                 new_y = cluster_size cluster_old_means
 
--- given one cluster and the mean of that cluster, recreate the cluster with a list of Pixel2s that starts with the mean and the remaining being Pixel2s without the color, only the position
-quantize_single [] _ = []
-quantize_single (c:xc) m = (Pixel2 NoColor (Pos (x (pos c)) (y (pos c)))):(quantize_single xc m)
+-- Providing the list of clustered Pixel2s, return a list of positions. 
+quantize_cluster_single [] = []
+quantize_cluster_single (c:xc) = (Pos (x (pos c)) (y (pos c))):(quantize_cluster_single xc)
 
 
 -- quantize list of clustered Pixel2s
-quantize [] [] = [] 
-quantize (c:xc) (m:xm) = (quantize_single c m):(quantize xc xm)
+quantize_cluster [] = [] 
+quantize_cluster (c:xc) = (quantize_cluster_single c):(quantize_cluster xc)
+
+-- Extract the color from the mean vector
+quantize_mean [] = []
+quantize_mean (x:xs) = (color x):(quantize_mean xs)
