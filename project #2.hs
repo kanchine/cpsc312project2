@@ -52,8 +52,19 @@ imageQuantization filePath k = do
     let clusters = quantize_cluster a
     let img = writeImage width height clusters clusterMeans
     --DT.trace (show width) (pure ()) --for debugging purpose
-    let outputFilePath = "quantized_img_k_" ++ (show k) ++"_"++ (takeBaseName filePath) ++ ".png"
-    savePngImage outputFilePath (ImageRGB8 img)
+    saveImage filePath k (ImageRGB8 img)
+  
+saveImage :: FilePath -> Int -> DynamicImage -> IO ()
+saveImage filePath k img = do
+    let extension = takeExtension filePath
+    let outputFilePath = "quantized_img_k_" ++ (show k) ++"_"++ (takeBaseName filePath) ++ extension
+    let saveFn extension
+            | extension == ".jpg" || extension == ".jpeg" = saveJpgImage 100 outputFilePath img
+            | extension == ".png" = savePngImage outputFilePath img
+            | extension == ".tiff" = saveTiffImage outputFilePath img
+            | extension == ".bmp" = saveBmpImage outputFilePath img
+            | otherwise = putStrLn ("Could not save image, acceptable file types: bmp, jpg, png, tiff")
+    saveFn extension
 
 -- Read Image, convert image to list of Pixel2, also return the dimension of image
 imageVectorization :: FilePath -> IO (Int, Int, [Pixel2])
